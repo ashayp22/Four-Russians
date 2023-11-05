@@ -42,6 +42,11 @@ def get_adj_matrix(edges):
 def print_array_dim(A):
     print(f"{len(A)} x {len(A[0])}")
 
+"""
+Paritions a matrix by column based on the bits that each row is set to
+For example, if a row has value 6, then it's binary value is 101. If we have
+min_col=0 and max_col=1, we should return 1.
+"""
 def split_bits_by_column(A, min_col, max_col, n):
     C = []
     for row in A:
@@ -51,6 +56,10 @@ def split_bits_by_column(A, min_col, max_col, n):
 
     return C
 
+"""
+Read in a 2D array with each row set to a list
+containing 0s and 1s, and convert this row into a number
+"""
 def array_to_bits(A):
     bits = []
 
