@@ -7,35 +7,17 @@ def row_from_bottom(B, row):
 def create_array(n, m):
     return [[0 for _ in range(m)] for _ in range(n)]
 
-def binary_to_decimal(A):
-    decimal = 0
-    n = len(A)
-
-    for i in range(n):
-        decimal += A[i] * 2**(n-i-1)
-
-    return decimal
-
 def or_arrays(A, B):
-    n = len(A)
-    m = len(A[0])
-    C = create_array(n, m)
-
-    for i in range(n):
-        for j in range(m):
-            C[i][j] = A[i][j] or B[i][j]
-
-    return C
+    return [A[i] | B[i] for i in range(len(A))]
 
 def compare_arrays(A, B):
-    if len(A) != len(B) or len(A[0]) != len(B[0]):
+    if len(A) != len(B):
         return False
 
     for i in range(len(A)):
-        for j in range(len(B)):
-            if A[i][j] != B[i][j]:
-                print(f"({i},{j}): {A[i][j]} vs {B[i][j]}")
-                return False
+        if A[i] != B[i]:
+            print(f"({i}): {A[i]} vs {B[i]}")
+            return False
 
     return True
 
@@ -60,59 +42,82 @@ def get_adj_matrix(edges):
 def print_array_dim(A):
     print(f"{len(A)} x {len(A[0])}")
 
-def split_array_by_column(A, min_col, max_col):
-    num_row = len(A)
-    C = create_array(num_row, max_col-min_col)
-
-    for i in range(num_row):
-        C[i] = A[i][min_col:max_col]
+def split_bits_by_column(A, min_col, max_col, n):
+    C = []
+    for row in A:
+        remove_left = row & (2**(n - min_col)-1)
+        remove_right = (remove_left >> (n - max_col))
+        C.append(remove_right)
 
     return C
 
 def copy_array(A):
-    copy = create_array(len(A), len(A[0]))
+    return [a for a in A]
 
-    for i in range(len(A)):
-        for j in range(len(A[0])):
-            copy[i][j] = A[i][j]
+def array_to_bits(A):
+    bits = []
 
-    return copy
+    for row in A:
+        n = len(row)
+        total = 0
+
+        for i in range(n):
+            total += row[i] * 2**(n-1-i)
+
+        bits.append(total)
+
+    return bits
+
+def bits_to_array(A, n):
+    array = []
+
+    for val in A:
+        row = []
+        for i in range(n):
+            row.append(val & 1)
+            val = val >> 1
+
+        array.append(row[::-1])
+
+    return array
 
 def four_russians(init_A, init_B):
     A = copy_array(init_A)
     B = copy_array(init_B)
 
-    n_A, m_A = len(A), len(A[0])
-    n_B, m_B = len(B), len(B[0])
+    n_A = len(A)
+    n_B = len(B)
 
     # Check bounds
-    if not (n_A == m_A == n_B == m_B):
+    if not (n_A == n_B):
         return None
 
     n = n_A
     m = math.floor(math.log(n, 2))
 
+    n_padded = n + (n + 1) % m
+
     # Pad zeros
     for _ in range((n + 1) % m):
-        B.append([0 for _ in range(n)])
+        B.append(0)
         for j in range(n):
-            A[j].append(0)
+            A[j] = A[j] << 1
 
     # Main logic
-    C = create_array(n, n)
+    C = [0 for _ in range(n)]
 
     for i in range(1, math.ceil(n/m) + 1):
         arr_i = i-1
-        A_i = split_array_by_column(A, arr_i*m, arr_i*m+m)
-        B_i = B[arr_i*m:arr_i*m + m][:]
+        A_i = split_bits_by_column(A, arr_i*m, arr_i*m+m, n_padded)
+        B_i = B[arr_i*m:arr_i*m + m]
 
-        RS = create_array(2**m, n)
+        RS = [0 for _ in range(2**m)]
         bp = 1
         k = 0
 
         for j in range(1, 2**m):
             B_bottom = row_from_bottom(B_i, k+1)
-            RS[j] = or_arrays([RS[j-2**k]], [B_bottom])[0]
+            RS[j] = RS[j-2**k] | B_bottom
 
             if bp == 1:
                 bp = j + 1
@@ -123,7 +128,7 @@ def four_russians(init_A, init_B):
         C_i = create_array(n, n)
 
         for j in range(n):
-            C_i[j] = RS[binary_to_decimal(A_i[j])]
+            C_i[j] = RS[A_i[j]]
 
         C = or_arrays(C, C_i)
     return C
@@ -154,8 +159,8 @@ if __name__ == '__main__':
     if len(arg) == 3:
         graph = read_file_into_matrix(arg[1], ' ')
         expected = read_file_into_matrix(arg[2], ' ')
-        A = get_adj_matrix(graph)
-        A_transitive = get_adj_matrix(expected)
+        A = array_to_bits(get_adj_matrix(graph))
+        A_transitive = array_to_bits(get_adj_matrix(expected))
 
         n = len(A)
 
@@ -168,19 +173,11 @@ if __name__ == '__main__':
         exit(1)
 
     if len(arg) == 4:
-        A = read_file_into_matrix(arg[1], ',')
-        B = read_file_into_matrix(arg[2], ',')
-        C = read_file_into_matrix(arg[3], ',')
+        A = array_to_bits(read_file_into_matrix(arg[1], ','))
+        B = array_to_bits(read_file_into_matrix(arg[2], ','))
+        C = array_to_bits(read_file_into_matrix(arg[3], ','))
 
         test_arrays(four_russians(A, B), C)
         exit(1)
 
     sys.exit('Improper arguments')
-
-
-"""
-TODO:
-- Setup arg and file reading
-- Code up algorithm
-- Set up testing
-"""
