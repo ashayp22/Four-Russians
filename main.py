@@ -51,9 +51,6 @@ def split_bits_by_column(A, min_col, max_col, n):
 
     return C
 
-def copy_array(A):
-    return [a for a in A]
-
 def array_to_bits(A):
     bits = []
 
@@ -68,22 +65,9 @@ def array_to_bits(A):
 
     return bits
 
-def bits_to_array(A, n):
-    array = []
-
-    for val in A:
-        row = []
-        for i in range(n):
-            row.append(val & 1)
-            val = val >> 1
-
-        array.append(row[::-1])
-
-    return array
-
 def four_russians(init_A, init_B):
-    A = copy_array(init_A)
-    B = copy_array(init_B)
+    A = init_A.copy()
+    B = init_B.copy()
 
     n_A = len(A)
     n_B = len(B)
@@ -111,6 +95,7 @@ def four_russians(init_A, init_B):
         A_i = split_bits_by_column(A, arr_i*m, arr_i*m+m, n_padded)
         B_i = B[arr_i*m:arr_i*m + m]
 
+        # Generate row sums
         RS = [0 for _ in range(2**m)]
         bp = 1
         k = 0
@@ -127,6 +112,7 @@ def four_russians(init_A, init_B):
 
         C_i = create_array(n, n)
 
+        # Use memoized row sums to calculate each row in C_i
         for j in range(n):
             C_i[j] = RS[A_i[j]]
 
@@ -156,6 +142,7 @@ def test_arrays(received, expected):
 if __name__ == '__main__':
     arg = sys.argv
 
+    # Handle transitive closure of graphs
     if len(arg) == 3:
         graph = read_file_into_matrix(arg[1], ' ')
         expected = read_file_into_matrix(arg[2], ' ')
@@ -172,6 +159,7 @@ if __name__ == '__main__':
         test_arrays(A_n, A_transitive)
         exit(1)
 
+    # Handle matrix multiplication
     if len(arg) == 4:
         A = array_to_bits(read_file_into_matrix(arg[1], ','))
         B = array_to_bits(read_file_into_matrix(arg[2], ','))
